@@ -137,7 +137,8 @@ You can read the documentation of the project [here](./docs).
 ## How to develop
 
 1. Clone the repo
-2. Create a `.env` file at the root of the repository with the following contents
+2. `cd ./server`
+3. Create a `.env` file inside `./server` with the following contents
 ```
 POSTGRES_PASSWORD=changeme
 POSTGRES_USER=calendarserver
@@ -147,12 +148,11 @@ FA_FUSIONAUTH_MEMORY=512M
 
 DB_ADDR=localhost:6789
 ```
-3. Run `docker-compose up -d`, this will start the postgres container.
-4. Run `cargo run` to run the server or run it from your IDE of preference.
-5. Run `psql -h localhost -p 6789 -U calendarserver` and then type the password in the env variable `POSTGRES_PASSWORD`.
-6. Run `INSERT INTO api_keys(scopes) VALUES (array['SUPER']);` to create an api key.
-7. Run `SELECT api_key FROM api_keys;` and copy the API key, you'll put it in the `Authorization` header of
-each request you make to the API.
+4. Run `docker-compose up -d`, this will start the postgres container.
+5. Run `cargo run` to run the server or run it from your IDE of preference.
+6. Run `psql -h localhost -p 6789 -U calendarserver` and then type the password (which is in the env variable `POSTGRES_PASSWORD`).
+7. Run `INSERT INTO api_keys(scopes) VALUES (array['SUPER']);` to create an api key.
+8. Run `SELECT api_key FROM api_keys;` and copy the API key, you'll put it in the `Authorization` header of each request you make to the API.
 
 ## What Calendar Server does **NOT** support
 
