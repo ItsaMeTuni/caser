@@ -1,0 +1,16 @@
+[package]
+name = "caser-common"
+version = "0.1.0"
+authors = ["Lucas Antunes <lucasba8@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = { version = "0.4.15", feature = ["serde"] }
+serde = { version = "1.0.116", features = ["derive"] }
+uuid = { version = "0.8", features = ["serde", "v4"] }
+schemars = { version = "0.7", features = ["chrono", "uuid"] }
+okapi = { version = "0.4", features = ["derive_json_schema"] }
+thiserror = "1.0.20"
+num-traits = "0.2.12"
