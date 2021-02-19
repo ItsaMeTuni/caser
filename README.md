@@ -22,6 +22,7 @@ This is **NOT** aimed at being a personal calendar server, this is meant to be a
 
 **Disclaimer:** I'm a hobbyist, which means I'm not an expert in anything. Some mentoring would be helpful.
 
+
 ## Examples
 
 ### Create an event
