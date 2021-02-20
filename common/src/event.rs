@@ -7,7 +7,9 @@ use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use crate::recurrence::RecurrenceRule;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
-use crate::span::EventSpan;
+use crate::span::{EventSpan, EventDateTimeSpan, EventDateSpan};
+use crate::recurrence::parser::RRuleParseError;
+use std::convert::{TryFrom, TryInto};
 
 
 #[derive(Clone, Debug)]
@@ -18,9 +20,27 @@ pub struct EventRecurrence
     rdates: Vec<NaiveDate>,
 }
 
+impl TryFrom<RecurrencePlain> for EventRecurrence
+{
+    type Error = FromPlainError;
 
+    fn try_from(value: RecurrencePlain) -> Result<Self, Self::Error>
+    {
+        if value.rrule.is_none()
+        {
+            return Err(FromPlainError::MissingField)
+        }
 
-
+        Ok(
+            EventRecurrence {
+                rule: RecurrenceRule::new(&value.rrule.unwrap())
+                    .map_err(|e| FromPlainError::RRuleParseError(e))?,
+                rdates: value.rdates.unwrap_or(vec![]),
+                exdates: value.exdates.unwrap_or(vec![]),
+            }
+        )
+    }
+}
 
 
 #[derive(Debug)]
@@ -53,7 +73,80 @@ impl ToPlain<Vec<EventPlain>> for Vec<Event>
     }
 }
 
+impl TryFrom<EventPlain> for Event
+{
+    type Error = FromPlainError;
 
+    fn try_from(value: EventPlain) -> Result<Self, Self::Error>
+    {
+        if value.start_date.is_none() || value.end_date.is_none()
+        {
+            return Err(FromPlainError::MissingField);
+        }
+
+        if value.start_time.is_some() != value.end_time.is_some()
+        {
+            return Err(FromPlainError::InvalidSpan);
+        }
+
+        if value.id.is_none()
+        {
+            return Err(FromPlainError::MissingField);
+        }
+
+        if value.last_modified.is_none()
+        {
+            return Err(FromPlainError::MissingField);
+        }
+
+        let span;
+        if value.start_time.is_some()
+        {
+            span = EventSpan::DateTime(
+                EventDateTimeSpan {
+                    start: value.start_date.unwrap().and_time(value.start_time.unwrap()),
+                    end: value.end_date.unwrap().and_time(value.end_time.unwrap())
+                }
+            );
+        }
+        else
+        {
+            span = EventSpan::Date(
+                EventDateSpan {
+                    start: value.start_date.unwrap(),
+                    end: value.end_date.unwrap()
+                }
+            );
+        }
+
+        if value.recurrence.is_some()
+        {
+            Ok(
+                Event::Recurring(
+                    EventRecurring {
+                        id: value.id.unwrap(),
+                        span,
+                        recurrence: value.recurrence.unwrap().try_into()?,
+                        last_modified: value.last_modified.unwrap()
+                    }
+                )
+            )
+        }
+        else
+        {
+            Ok(
+                Event::Single(
+                    EventSingle {
+                        id: value.id.unwrap(),
+                        parent_id: value.parent_id,
+                        last_modified: value.last_modified.unwrap(),
+                        span,
+                    }
+                )
+            )
+        }
+    }
+}
 
 
 
@@ -235,15 +328,6 @@ impl ToPlain<EventPlain> for EventInstance
 /// on an `EventSingle`, `EventInstance` or `EventRecurring`.
 ///
 /// All fields are optional to allow for PATCH methods.
-///
-/// You cannot create an `EventSingle`, `EventInstance` or `EventRecurring`
-/// directly from an `EventPlain`. This is by design, there should
-/// be no need to modify an incoming event before writing
-/// it to the database, only validate it. You _can_ modify
-/// it since all fields are public, but it SHOULD NOT be done
-/// and you won't have any of the convenience functions the
-/// other event structs provide. **Only modify fields directly
-/// if you know what you're doing.**
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
 pub struct EventPlain
 {
@@ -335,6 +419,15 @@ impl EventPlain
 pub trait ToPlain<T: Serialize + Deserialize<'static>>
 {
     fn into_plain(self) -> T;
+}
+
+#[derive(Error, Debug)]
+#[error("Could not transform the plain event into a recurrent or single event.")]
+pub enum FromPlainError
+{
+    MissingField,
+    InvalidSpan,
+    RRuleParseError(RRuleParseError),
 }
 
 

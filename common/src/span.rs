@@ -3,8 +3,8 @@ use chrono::{NaiveTime, NaiveDate, Duration, NaiveDateTime};
 #[derive(Copy, Clone, Debug)]
 pub struct EventDateSpan
 {
-    start: NaiveDate,
-    end: NaiveDate,
+    pub start: NaiveDate,
+    pub end: NaiveDate,
 }
 
 
@@ -13,8 +13,8 @@ pub struct EventDateSpan
 #[derive(Copy, Clone, Debug)]
 pub struct EventDateTimeSpan
 {
-    start: NaiveDateTime,
-    end: NaiveDateTime,
+    pub start: NaiveDateTime,
+    pub end: NaiveDateTime,
 }
 
 impl EventDateTimeSpan
